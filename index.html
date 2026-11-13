@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' blob: data:; script-src 'self'; style-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex, nofollow">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Reader">
+<meta name="theme-color" content="#0E1014">
+<meta name="format-detection" content="telephone=no">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="app.css">
+<title>Reader</title>
+</head>
+<body>
+
+<!-- =============================================== START -->
+<section id="start" class="screen center active">
+  <div class="hero">
+    <div class="logo">
+      <svg viewBox="0 0 24 24"><path d="M3 5.5c2.8-.9 5.7-.6 8.5 1v13c-2.8-1.6-5.7-1.9-8.5-1z"/><path d="M21 5.5c-2.8-.9-5.7-.6-8.5 1v13c2.8-1.6 5.7-1.9 8.5-1z"/></svg>
+    </div>
+    <h1>Reader</h1>
+    <p class="muted">Öffne eine verschlüsselte Exportdatei (.mvx), um deine Sammlung zu lesen.</p>
+  </div>
+  <label class="btn primary big" for="fileInput">
+    <svg viewBox="0 0 24 24"><path d="M4 7a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/></svg>
+    Exportdatei öffnen
+  </label>
+  <input type="file" id="fileInput" class="hidden-input">
+  <ul class="facts">
+    <li><span class="dot ok"></span>Die Datei bleibt verschlüsselt auf deinem Gerät.</li>
+    <li><span class="dot accent"></span>Seiten werden erst beim Lesen im Arbeitsspeicher entschlüsselt.</li>
+    <li><span class="dot warn"></span>Nichts wird hochgeladen, die App funktioniert offline.</li>
+  </ul>
+  <p id="installHint" class="hint" hidden>Tipp: In Safari auf <b>Teilen</b> → <b>Zum Home-Bildschirm</b> tippen. Dann startet der Reader wie eine App im Vollbild.</p>
+</section>
+
+<!-- =============================================== ENTSPERREN -->
+<section id="unlock" class="screen center">
+  <div class="card">
+    <div class="lock-badge">
+      <svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+    </div>
+    <h2 id="unlockTitle">Passwort eingeben</h2>
+    <p id="unlockText" class="muted small">Gib das Export-Passwort ein, das du in MangaVault vergeben hast.</p>
+    <form id="unlockForm" autocomplete="off" novalidate>
+      <div class="pwrow">
+        <input id="pw" type="password" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="go" placeholder="Export-Passwort" aria-label="Export-Passwort">
+        <button type="button" id="pwEye" class="eye" aria-label="Passwort anzeigen">
+          <svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+      <p id="unlockError" class="error" hidden></p>
+      <button type="submit" id="unlockBtn" class="btn primary wide"><span id="unlockSpin" class="spinner" hidden></span><span id="unlockLabel">Öffnen</span></button>
+    </form>
+    <button type="button" id="otherFile" class="btn ghost wide">Andere Datei wählen</button>
+  </div>
+</section>
+
+<!-- =============================================== BIBLIOTHEK -->
+<section id="library" class="screen scroll">
+  <header class="bar">
+    <div class="titleblock">
+      <h1>Bibliothek</h1>
+      <p id="libInfo" class="muted small"></p>
+    </div>
+    <button id="closeBtn" class="iconbtn" aria-label="Sperren und schließen">
+      <svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+    </button>
+  </header>
+  <div class="tools">
+    <div class="search">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="search" type="search" placeholder="Serien durchsuchen" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+    </div>
+    <div id="folderChips" class="chips"></div>
+  </div>
+  <div id="seriesGrid" class="grid"></div>
+  <p id="libEmpty" class="empty muted" hidden>Keine Serie gefunden.</p>
+</section>
+
+<!-- =============================================== SERIE -->
+<section id="series" class="screen scroll">
+  <header class="bar">
+    <button id="seriesBack" class="iconbtn" aria-label="Zurück">
+      <svg viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></svg>
+    </button>
+    <div class="titleblock">
+      <h1 id="seriesTitle"></h1>
+      <p id="seriesInfo" class="muted small"></p>
+    </div>
+  </header>
+  <div class="series-head">
+    <div class="cover large"><img id="seriesCover" alt=""></div>
+    <div class="series-actions">
+      <div id="seriesProgress" class="bar-track"><div class="bar-fill"></div></div>
+      <button id="continueBtn" class="btn primary wide continue">
+        <span class="col"><span id="continueText">Lesen starten</span><small id="continueSub"></small></span>
+        <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+      </button>
+    </div>
+  </div>
+  <h3 class="section">KAPITEL</h3>
+  <ul id="chapterList" class="chapters"></ul>
+</section>
+
+<!-- =============================================== READER -->
+<section id="reader" class="screen reader">
+  <div id="pageView" class="pageview">
+    <div id="stage" class="stage"><img id="pageImg" alt="" draggable="false"></div>
+    <div id="pageSpin" class="spinner big" hidden></div>
+  </div>
+  <div id="stripView" class="stripview" hidden>
+    <div id="strip" class="strip"></div>
+    <button id="stripNext" class="btn secondary strip-next">Nächstes Kapitel</button>
+  </div>
+
+  <div id="hudTop" class="hud top">
+    <button id="readerBack" class="iconbtn" aria-label="Zurück">
+      <svg viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></svg>
+    </button>
+    <div class="titleblock">
+      <div id="rTitle" class="rtitle"></div>
+      <div id="rSub" class="muted small"></div>
+    </div>
+    <button id="modeBtn" class="pill" aria-label="Ansicht wechseln">Seite</button>
+    <button id="dirBtn" class="pill" aria-label="Leserichtung wechseln">R → L</button>
+    <button id="ovBtn" class="iconbtn" aria-label="Seitenübersicht">
+      <svg viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></svg>
+    </button>
+  </div>
+  <div id="hudBottom" class="hud bottom">
+    <button id="prevCh" class="iconbtn" aria-label="Vorheriges Kapitel">
+      <svg viewBox="0 0 24 24"><path d="M6 5v14"/><path d="m18 5-9 7 9 7z"/></svg>
+    </button>
+    <input id="slider" type="range" min="0" max="0" step="1" value="0" aria-label="Seite">
+    <span id="pageText" class="pagetext">1 / 1</span>
+    <button id="nextCh" class="iconbtn" aria-label="Nächstes Kapitel">
+      <svg viewBox="0 0 24 24"><path d="M18 5v14"/><path d="m6 5 9 7-9 7z"/></svg>
+    </button>
+  </div>
+</section>
+
+<!-- =============================================== SEITENUEBERSICHT -->
+<section id="overview" class="screen scroll">
+  <header class="bar">
+    <button id="ovClose" class="iconbtn" aria-label="Schließen">
+      <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+    <div class="titleblock">
+      <h1 id="ovTitle"></h1>
+      <p id="ovSub" class="muted small"></p>
+    </div>
+    <div class="segmented">
+      <button id="ovSmaller" class="iconbtn sm" aria-label="Vorschau kleiner"><svg viewBox="0 0 24 24"><path d="M6 12h12"/></svg></button>
+      <button id="ovLarger" class="iconbtn sm" aria-label="Vorschau größer"><svg viewBox="0 0 24 24"><path d="M6 12h12M12 6v12"/></svg></button>
+    </div>
+  </header>
+  <div class="ovnav">
+    <button id="ovPrev" class="btn ghost sm">‹ Kapitel</button>
+    <button id="ovNext" class="btn ghost sm">Kapitel ›</button>
+  </div>
+  <div id="ovGrid" class="ovgrid"></div>
+</section>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<div id="privacy" class="privacy" hidden></div>
+
+<script src="mvx.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
